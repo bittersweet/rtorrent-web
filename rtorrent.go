@@ -17,21 +17,24 @@ func main() {
 	if err != nil {
 		log.Fatal("error: ", err)
 	}
-	// var version string
-	// err = client.Call("system.api_version", nil, &version)
-	// // err = client.Call("service.time", nil, &version)
-	// if err != nil {
-	// 	log.Fatal("error: ", err)
-	// }
-	// fmt.Printf("Version: %s\\n", version)
+	var version string
+	err = client.Call("system.api_version", nil, &version)
+	// err = client.Call("service.time", nil, &version)
+	if err != nil {
+		log.Fatal("error: ", err)
+	}
+	fmt.Printf("Version: %s\n", version)
 
-	// if err := client.Call("d.multicall", []interface{}{"main", "d.bytes_done="}, &output); err != nil {
-	var output []interface{}
-	if err := client.Call("d.multicall", []interface{}{"main"}, &output); err != nil {
-		fmt.Printf("service.sum call error: %v\n", err)
+	type Result struct {
+		Name string `xmlrpc:"string"`
+	}
+
+	var output [][]string
+	// 	if err := client.Call("d.multicall", []interface{}{"main", "d.get_name=", "d.bytes_done="}, &output); err != nil {
+	if err := client.Call("d.multicall", []interface{}{"main", "d.get_name="}, &output); err != nil {
+		fmt.Println("service.sum call error: ", err)
 	}
 	fmt.Println(output)
-	fmt.Println(len(output))
 
 	// var torrents []interface{}
 	// args := make([]interface{}, 3)
