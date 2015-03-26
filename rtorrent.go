@@ -112,6 +112,12 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "static/index.html")
 }
 
+func handleTorrent(w http.ResponseWriter, r *http.Request) {
+	defer trackTime(time.Now(), "handleTorrent")
+
+	http.ServeFile(w, r, "static/show.html")
+}
+
 func handleTorrents(w http.ResponseWriter, r *http.Request) {
 	defer trackTime(time.Now(), "handleTorrents")
 
@@ -119,7 +125,6 @@ func handleTorrents(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < len(torrents); i++ {
 		torrent := torrents[i]
 		torrent.setTracker()
-		fmt.Printf("%#v\n", torrent)
 		// Work around to pass by value or pointer type thing
 		// updating in setTracker didn't work
 		torrents[i] = torrent
@@ -135,8 +140,8 @@ func handleTorrents(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 
-func handleTorrent(w http.ResponseWriter, r *http.Request) {
-	defer trackTime(time.Now(), "handleTorrent")
+func handleTorrentJson(w http.ResponseWriter, r *http.Request) {
+	defer trackTime(time.Now(), "handleTorrentJson")
 
 	vars := mux.Vars(r)
 	files := getFiles(vars["hash"])
@@ -170,7 +175,6 @@ func stateMonitor() chan<- *Tracker {
 		for {
 			select {
 			case t := <-updates:
-				fmt.Println("update")
 				trackers[t.hash] = t.url
 			}
 		}
@@ -251,11 +255,11 @@ func main() {
 		torrent := torrents[i]
 		incoming <- &torrent
 	}
-	fmt.Printf("%#v\n", trackers)
 
 	mux := mux.NewRouter()
 	mux.HandleFunc("/", handleIndex)
 	mux.HandleFunc("/torrents", handleTorrents)
+	mux.HandleFunc("/torrents/{hash}.json", handleTorrentJson)
 	mux.HandleFunc("/torrents/{hash}", handleTorrent)
 	mux.HandleFunc("/trackers", handleTrackers)
 	fmt.Println("Will start listening on port 8000")
