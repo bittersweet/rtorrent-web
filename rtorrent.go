@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/kolo/xmlrpc"
 )
 
@@ -17,18 +18,18 @@ func trackTime(start time.Time, name string) {
 
 type Torrent struct {
 	Name              string `json:"name"`
-	BytesDone         int64  `json:"bytes_done"`
+	BytesDone         string `json:"bytes_done"`
 	ConnectionCurrent string `json:"connection_current"`
 	CreationDate      int64  `json:"creation_date"`
-	GetDownRate       int64  `json:"get_down_rate"`
-	GetDownTotal      int64  `json:"get_down_total"`
-	SizeBytes         int64  `json:"size_bytes"`
+	GetDownRate       string `json:"get_down_rate"`
+	GetDownTotal      string `json:"get_down_total"`
+	SizeBytes         string `json:"size_bytes"`
 	SizeFiles         int64  `json:"size_files"`
 	State             int64  `json:"state"`
 	LoadDate          int64  `json:"load_date"`
 	Ratio             int64  `json:"ratio"`
-	GetUpRate         int64  `json:"get_up_rate"`
-	GetUpTotal        int64  `json:"get_up_total"`
+	GetUpRate         string `json:"get_up_rate"`
+	GetUpTotal        string `json:"get_up_total"`
 	Hash              string `json:"hash"`
 }
 
@@ -50,6 +51,8 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 var client *xmlrpc.Client
 
 func init() {
+	defer trackTime(time.Now(), "init")
+
 	var err error
 	client, err = xmlrpc.NewClient("http://192.168.2.7:5001/RPC2", nil)
 	if err != nil {
@@ -58,6 +61,8 @@ func init() {
 }
 
 func getTorrents() []Torrent {
+	defer trackTime(time.Now(), "getTorrents")
+
 	var output [][]interface{}
 	if err := client.Call("d.multicall", []interface{}{"main", "d.name=", "d.bytes_done=", "d.connection_current=", "d.creation_date=", "d.get_down_rate=", "d.get_down_total=", "d.size_bytes=", "d.size_files=", "d.state=", "d.load_date=", "d.ratio=", "d.get_up_rate=", "d.get_up_total=", "d.hash="}, &output); err != nil {
 		fmt.Println("d.multicall call error: ", err)
@@ -70,18 +75,18 @@ func getTorrents() []Torrent {
 
 		torrent := Torrent{
 			Name:              data[0].(string),
-			BytesDone:         data[1].(int64),
+			BytesDone:         humanize.Bytes(uint64(data[1].(int64))),
 			ConnectionCurrent: data[2].(string),
 			CreationDate:      data[3].(int64),
-			GetDownRate:       data[4].(int64),
-			GetDownTotal:      data[5].(int64),
-			SizeBytes:         data[6].(int64),
+			GetDownRate:       humanize.Bytes(uint64(data[4].(int64))),
+			GetDownTotal:      humanize.Bytes(uint64(data[5].(int64))),
+			SizeBytes:         humanize.Bytes(uint64(data[6].(int64))),
 			SizeFiles:         data[7].(int64),
 			State:             data[8].(int64),
 			LoadDate:          data[9].(int64),
 			Ratio:             data[10].(int64),
-			GetUpRate:         data[11].(int64),
-			GetUpTotal:        data[12].(int64),
+			GetUpRate:         humanize.Bytes(uint64(data[11].(int64))),
+			GetUpTotal:        humanize.Bytes(uint64(data[12].(int64))),
 			Hash:              data[13].(string),
 		}
 		torrents[i] = torrent
