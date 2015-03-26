@@ -57,11 +57,15 @@
       });
 
       var Torrent = React.createClass({
+        onClick: function() {
+          var url = 'http://localhost:8000/torrents/' + this.props.data.hash;
+          window.open(url, '_blank');
+        },
         render: function() {
           return (
             <tr className="torrent">
               <td>{this.props.data.tracker}</td>
-              <td>{this.props.data.name}</td>
+              <td onClick={this.onClick}>{this.props.data.name}</td>
               <td>{this.props.data.size_files}</td>
               <td>{this.props.data.size_bytes}</td>
               <td>{this.props.data.get_down_rate}</td>
