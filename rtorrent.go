@@ -4,12 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/kolo/xmlrpc"
 )
+
+var client *xmlrpc.Client
+var trackers = map[string]string{}
+
+// var updates = make(chan Tracker)
 
 func trackTime(start time.Time, name string) {
 	elapsed := time.Since(start)
@@ -29,14 +35,52 @@ type Torrent struct {
 	LoadDate          int64  `json:"load_date"`
 	Ratio             int64  `json:"ratio"`
 	GetUpRate         string `json:"get_up_rate"`
+	GetUpRateRaw      int64
 	GetUpTotal        string `json:"get_up_total"`
 	Hash              string `json:"hash"`
+	Tracker           string `json:"tracker"`
+}
+
+func (t *Torrent) getTracker() string {
+	defer trackTime(time.Now(), "getTracker")
+
+	var tracker string
+	if err := client.Call("t.get_url", []interface{}{t.Hash, 0}, &tracker); err != nil {
+		log.Fatal("error: ", err)
+	}
+
+	url, err := url.Parse(tracker)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(url)
+	host, _, _ := net.SplitHostPort(url.Host)
+	return host
+	// Store an inmemory list of torrents, update that, and let the getTorrents
+	// update fields that have changed
+	// or for first version just store a map[hash] => tracker
+	// Take a look at this concurrency model: https://golang.org/doc/codewalk/sharemem/
+}
+
+func (t *Torrent) setTracker() {
+	// defer trackTime(time.Now(), "setTracker")
+
+	url := trackers[t.Hash]
+	// fmt.Printf("Setting url to %s\\n", url)
+	// if key is not in map, do a request
+	t.Tracker = url
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	defer trackTime(time.Now(), "handleIndex")
 
 	torrents := getTorrents()
+	for i := 0; i < len(torrents); i++ {
+		torrent := torrents[i]
+		torrent.setTracker()
+		torrents[i] = torrent
+	}
 
 	output, err := json.MarshalIndent(&torrents, "", "  ")
 	if err != nil {
@@ -48,7 +92,39 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 
-var client *xmlrpc.Client
+func handleTrackers(w http.ResponseWriter, r *http.Request) {
+	defer trackTime(time.Now(), "handleTrackers")
+
+	output, err := json.MarshalIndent(&trackers, "", "  ")
+	if err != nil {
+		log.Fatal("MarshalIndent", err)
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Write(output)
+}
+
+type Tracker struct {
+	hash string
+	url  string
+}
+
+func stateMonitor() chan<- *Tracker {
+	updates := make(chan *Tracker)
+	go func() {
+		for {
+			select {
+			case t := <-updates:
+				fmt.Println("update")
+				trackers[t.hash] = t.url
+			}
+		}
+	}()
+
+	fmt.Println("Statemonitor launched")
+	return updates
+}
 
 func init() {
 	defer trackTime(time.Now(), "init")
@@ -86,6 +162,7 @@ func getTorrents() []Torrent {
 			LoadDate:          data[9].(int64),
 			Ratio:             data[10].(int64),
 			GetUpRate:         humanize.Bytes(uint64(data[11].(int64))),
+			GetUpRateRaw:      data[11].(int64),
 			GetUpTotal:        humanize.Bytes(uint64(data[12].(int64))),
 			Hash:              data[13].(string),
 		}
@@ -96,10 +173,38 @@ func getTorrents() []Torrent {
 	return torrents
 }
 
+func Poller(process <-chan *Torrent, updates chan<- *Tracker) {
+	for torrent := range process {
+		tracker := torrent.getTracker()
+		fmt.Println("updating")
+		updates <- &Tracker{torrent.Hash, tracker}
+	}
+}
+
 func main() {
 	defer trackTime(time.Now(), "xmlRpc")
 
+	updates := stateMonitor()
+	incoming := make(chan *Torrent)
+
+	torrents := getTorrents()
+	fmt.Println("have torrents", len(torrents))
+
+	// Launch poller goroutines
+	for i := 0; i < 4; i++ {
+		go Poller(incoming, updates)
+	}
+
+	// Send all torrents to the queue to be processed
+	for i := 0; i < len(torrents); i++ {
+		torrent := torrents[i]
+		fmt.Println("updating")
+		incoming <- &torrent
+	}
+	fmt.Printf("%#v\n", trackers)
+
 	http.HandleFunc("/", handleIndex)
+	http.HandleFunc("/trackers", handleTrackers)
 	fmt.Println("Will start listening on port 8000")
 	http.ListenAndServe(":8000", nil)
 }
