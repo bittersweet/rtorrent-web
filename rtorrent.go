@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/kolo/xmlrpc"
@@ -28,6 +30,21 @@ type Torrent struct {
 	GetUpRate         int64
 	GetUpTotal        int64
 	Hash              string
+}
+
+func handleIndex(torrents []Torrent) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		defer trackTime(time.Now(), "handleIndex")
+
+		output, err := json.MarshalIndent(&torrents, "", "  ")
+		if err != nil {
+			log.Fatal("MarshalIndent", err)
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.Write(output)
+	}
+	return http.HandlerFunc(fn)
 }
 
 func main() {
@@ -63,11 +80,13 @@ func main() {
 			GetUpTotal:        data[12].(int64),
 			Hash:              data[13].(string),
 		}
-		// fmt.Println(torrent)
-		// fmt.Println(i)
-		// torrents = append(torrents, torrent)
 		torrents[i] = torrent
 	}
 
 	fmt.Printf("%#v\n", torrents[0])
+
+	mux := http.NewServeMux()
+	mux.Handle("/", handleIndex(torrents))
+	fmt.Println("Will start listening on port 8000")
+	http.ListenAndServe(":8000", mux)
 }
