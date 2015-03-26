@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -73,6 +74,12 @@ func (t *Torrent) setTracker() {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
+	defer trackTime(time.Now(), "handleIndex")
+
+	http.ServeFile(w, r, "static/index.html")
+}
+
+func handleTorrents(w http.ResponseWriter, r *http.Request) {
 	defer trackTime(time.Now(), "handleIndex")
 
 	torrents := getTorrents()
@@ -204,6 +211,7 @@ func main() {
 	fmt.Printf("%#v\n", trackers)
 
 	http.HandleFunc("/", handleIndex)
+	http.HandleFunc("/torrents", handleTorrents)
 	http.HandleFunc("/trackers", handleTrackers)
 	fmt.Println("Will start listening on port 8000")
 	http.ListenAndServe(":8000", nil)
