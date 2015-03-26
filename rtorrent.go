@@ -16,20 +16,20 @@ func trackTime(start time.Time, name string) {
 }
 
 type Torrent struct {
-	Name              string
-	BytesDone         int64
-	ConnectionCurrent string
-	CreationDate      int64
-	GetDownRate       int64
-	GetDownTotal      int64
-	SizeBytes         int64
-	SizeFiles         int64
-	State             int64
-	LoadDate          int64
-	Ratio             int64
-	GetUpRate         int64
-	GetUpTotal        int64
-	Hash              string
+	Name              string `json:"name"`
+	BytesDone         int64  `json:"bytes_done"`
+	ConnectionCurrent string `json:"connection_current"`
+	CreationDate      int64  `json:"creation_date"`
+	GetDownRate       int64  `json:"get_down_rate"`
+	GetDownTotal      int64  `json:"get_down_total"`
+	SizeBytes         int64  `json:"size_bytes"`
+	SizeFiles         int64  `json:"size_files"`
+	State             int64  `json:"state"`
+	LoadDate          int64  `json:"load_date"`
+	Ratio             int64  `json:"ratio"`
+	GetUpRate         int64  `json:"get_up_rate"`
+	GetUpTotal        int64  `json:"get_up_total"`
+	Hash              string `json:"hash"`
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +42,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		log.Fatal("MarshalIndent", err)
 	}
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.Write(output)
 }
