@@ -40,6 +40,8 @@ type Torrent struct {
 type File struct {
 	Name      string `json:"name"`
 	SizeBytes string `json:"size_bytes"`
+	Priority  int64  `json:"priority"`
+	IsOpen    int64  `json:"is_open"`
 }
 
 type Tracker struct {
@@ -87,7 +89,7 @@ func (t *Torrent) setTracker() {
 
 func getFiles(hash string) []File {
 	var output [][]interface{}
-	args := []interface{}{hash, 0, "f.get_path=", "f.size_bytes="}
+	args := []interface{}{hash, 0, "f.get_path=", "f.size_bytes=", "f.get_priority=", "f.is_open="}
 	if err := client.Call("f.multicall", args, &output); err != nil {
 		fmt.Println("d.multicall call error: ", err)
 	}
@@ -96,9 +98,13 @@ func getFiles(hash string) []File {
 	for i := 0; i < len(output); i++ {
 		data := output[i]
 
+		fmt.Printf("%#v\n", data)
+
 		file := File{
 			Name:      data[0].(string),
 			SizeBytes: humanize.Bytes(uint64(data[1].(int64))),
+			Priority:  data[2].(int64),
+			IsOpen:    data[3].(int64),
 		}
 		files[i] = file
 	}
