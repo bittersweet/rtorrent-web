@@ -37,13 +37,14 @@
             <table class="pure-table" className="torrentList pure-table pure-table-striped">
               <thead>
                 <tr>
-                  <th>name</th>
-                  <th>files</th>
-                  <th>size in bytes</th>
-                  <th>down rate</th>
-                  <th>bytes done</th>
-                  <th>up rate</th>
-                  <th>up total</th>
+                  <th>Tracker</th>
+                  <th>Name</th>
+                  <th>Files</th>
+                  <th>Size in bytes</th>
+                  <th>Down rate</th>
+                  <th>Bytes done</th>
+                  <th>Up rate</th>
+                  <th>Up total</th>
                 </tr>
               </thead>
               <tbody>
@@ -58,6 +59,7 @@
         render: function() {
           return (
             <tr className="torrent">
+              <td>{this.props.data.tracker}</td>
               <td>{this.props.data.name}</td>
               <td>{this.props.data.size_files}</td>
               <td>{this.props.data.size_bytes}</td>

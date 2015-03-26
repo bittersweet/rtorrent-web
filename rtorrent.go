@@ -55,8 +55,10 @@ func (t *Torrent) getTracker() string {
 		panic(err)
 	}
 
-	fmt.Println(url)
-	host, _, _ := net.SplitHostPort(url.Host)
+	host, port, _ := net.SplitHostPort(url.Host)
+	if port == "" {
+		host = url.Host
+	}
 	return host
 	// Store an inmemory list of torrents, update that, and let the getTorrents
 	// update fields that have changed
@@ -86,6 +88,9 @@ func handleTorrents(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < len(torrents); i++ {
 		torrent := torrents[i]
 		torrent.setTracker()
+		fmt.Println(torrent)
+		// Work around to pass by value or pointer type thing
+		// updating in setTracker didn't work
 		torrents[i] = torrent
 	}
 
@@ -150,7 +155,6 @@ func getTorrents() []Torrent {
 	if err := client.Call("d.multicall", []interface{}{"main", "d.name=", "d.bytes_done=", "d.connection_current=", "d.creation_date=", "d.get_down_rate=", "d.get_down_total=", "d.size_bytes=", "d.size_files=", "d.state=", "d.load_date=", "d.ratio=", "d.get_up_rate=", "d.get_up_total=", "d.hash="}, &output); err != nil {
 		fmt.Println("d.multicall call error: ", err)
 	}
-	fmt.Printf("Found %d torrents\n", len(output))
 
 	torrents := make([]Torrent, len(output))
 	for i := 0; i < len(output); i++ {
@@ -176,14 +180,12 @@ func getTorrents() []Torrent {
 		torrents[i] = torrent
 	}
 
-	fmt.Printf("%#v\n", torrents[0])
 	return torrents
 }
 
 func Poller(process <-chan *Torrent, updates chan<- *Tracker) {
 	for torrent := range process {
 		tracker := torrent.getTracker()
-		fmt.Println("updating")
 		updates <- &Tracker{torrent.Hash, tracker}
 	}
 }
@@ -195,7 +197,6 @@ func main() {
 	incoming := make(chan *Torrent)
 
 	torrents := getTorrents()
-	fmt.Println("have torrents", len(torrents))
 
 	// Launch poller goroutines
 	for i := 0; i < 4; i++ {
@@ -205,7 +206,6 @@ func main() {
 	// Send all torrents to the queue to be processed
 	for i := 0; i < len(torrents); i++ {
 		torrent := torrents[i]
-		fmt.Println("updating")
 		incoming <- &torrent
 	}
 	fmt.Printf("%#v\n", trackers)
