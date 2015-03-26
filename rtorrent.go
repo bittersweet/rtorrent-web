@@ -10,18 +10,12 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"github.com/gorilla/mux"
 	"github.com/kolo/xmlrpc"
 )
 
 var client *xmlrpc.Client
 var trackers = map[string]string{}
-
-// var updates = make(chan Tracker)
-
-func trackTime(start time.Time, name string) {
-	elapsed := time.Since(start)
-	log.Printf("%s took %s\n", name, elapsed)
-}
 
 type Torrent struct {
 	Name              string `json:"name"`
@@ -39,7 +33,23 @@ type Torrent struct {
 	GetUpRateRaw      int64
 	GetUpTotal        string `json:"get_up_total"`
 	Hash              string `json:"hash"`
+	PeersConnected    int64  `json:"peers_connected"`
 	Tracker           string `json:"tracker"`
+}
+
+type File struct {
+	Name      string `json:"name"`
+	SizeBytes string `json:"size_bytes"`
+}
+
+type Tracker struct {
+	hash string
+	url  string
+}
+
+func trackTime(start time.Time, name string) {
+	elapsed := time.Since(start)
+	log.Printf("%s took %s\n", name, elapsed)
 }
 
 func (t *Torrent) getTracker() string {
@@ -75,6 +85,27 @@ func (t *Torrent) setTracker() {
 	t.Tracker = url
 }
 
+func getFiles(hash string) []File {
+	var output [][]interface{}
+	args := []interface{}{hash, 0, "f.get_path=", "f.size_bytes="}
+	if err := client.Call("f.multicall", args, &output); err != nil {
+		fmt.Println("d.multicall call error: ", err)
+	}
+
+	files := make([]File, len(output))
+	for i := 0; i < len(output); i++ {
+		data := output[i]
+
+		file := File{
+			Name:      data[0].(string),
+			SizeBytes: humanize.Bytes(uint64(data[1].(int64))),
+		}
+		files[i] = file
+	}
+
+	return files
+}
+
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	defer trackTime(time.Now(), "handleIndex")
 
@@ -82,13 +113,13 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleTorrents(w http.ResponseWriter, r *http.Request) {
-	defer trackTime(time.Now(), "handleIndex")
+	defer trackTime(time.Now(), "handleTorrents")
 
 	torrents := getTorrents()
 	for i := 0; i < len(torrents); i++ {
 		torrent := torrents[i]
 		torrent.setTracker()
-		fmt.Println(torrent)
+		fmt.Printf("%#v\n", torrent)
 		// Work around to pass by value or pointer type thing
 		// updating in setTracker didn't work
 		torrents[i] = torrent
@@ -97,6 +128,22 @@ func handleTorrents(w http.ResponseWriter, r *http.Request) {
 	output, err := json.MarshalIndent(&torrents, "", "  ")
 	if err != nil {
 		log.Fatal("MarshalIndent", err)
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Write(output)
+}
+
+func handleTorrent(w http.ResponseWriter, r *http.Request) {
+	defer trackTime(time.Now(), "handleTorrent")
+
+	vars := mux.Vars(r)
+	files := getFiles(vars["hash"])
+
+	output, err := json.MarshalIndent(&files, "", "  ")
+	if err != nil {
+		log.Fatal("MarshalIndent files", err)
 	}
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -115,11 +162,6 @@ func handleTrackers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.Write(output)
-}
-
-type Tracker struct {
-	hash string
-	url  string
 }
 
 func stateMonitor() chan<- *Tracker {
@@ -152,7 +194,7 @@ func getTorrents() []Torrent {
 	defer trackTime(time.Now(), "getTorrents")
 
 	var output [][]interface{}
-	if err := client.Call("d.multicall", []interface{}{"main", "d.name=", "d.bytes_done=", "d.connection_current=", "d.creation_date=", "d.get_down_rate=", "d.get_down_total=", "d.size_bytes=", "d.size_files=", "d.state=", "d.load_date=", "d.ratio=", "d.get_up_rate=", "d.get_up_total=", "d.hash="}, &output); err != nil {
+	if err := client.Call("d.multicall", []interface{}{"main", "d.name=", "d.bytes_done=", "d.connection_current=", "d.creation_date=", "d.get_down_rate=", "d.get_down_total=", "d.size_bytes=", "d.size_files=", "d.state=", "d.load_date=", "d.ratio=", "d.get_up_rate=", "d.get_up_total=", "d.hash=", "d.peers_connected="}, &output); err != nil {
 		fmt.Println("d.multicall call error: ", err)
 	}
 
@@ -176,6 +218,7 @@ func getTorrents() []Torrent {
 			GetUpRateRaw:      data[11].(int64),
 			GetUpTotal:        humanize.Bytes(uint64(data[12].(int64))),
 			Hash:              data[13].(string),
+			PeersConnected:    data[14].(int64),
 		}
 		torrents[i] = torrent
 	}
@@ -210,9 +253,11 @@ func main() {
 	}
 	fmt.Printf("%#v\n", trackers)
 
-	http.HandleFunc("/", handleIndex)
-	http.HandleFunc("/torrents", handleTorrents)
-	http.HandleFunc("/trackers", handleTrackers)
+	mux := mux.NewRouter()
+	mux.HandleFunc("/", handleIndex)
+	mux.HandleFunc("/torrents", handleTorrents)
+	mux.HandleFunc("/torrents/{hash}", handleTorrent)
+	mux.HandleFunc("/trackers", handleTrackers)
 	fmt.Println("Will start listening on port 8000")
-	http.ListenAndServe(":8000", nil)
+	http.ListenAndServe(":8000", mux)
 }
