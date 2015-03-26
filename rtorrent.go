@@ -22,7 +22,7 @@ type Torrent struct {
 	GetDownTotal      int64
 	SizeBytes         int64
 	SizeFiles         int64
-	State             string
+	State             int64
 	LoadDate          int64
 	Ratio             int64
 	GetUpRate         int64
@@ -41,9 +41,7 @@ func main() {
 	if err := client.Call("d.multicall", []interface{}{"main", "d.name=", "d.bytes_done=", "d.connection_current=", "d.creation_date=", "d.get_down_rate=", "d.get_down_total=", "d.size_bytes=", "d.size_files=", "d.state=", "d.load_date=", "d.ratio=", "d.get_up_rate=", "d.get_up_total=", "d.hash="}, &output); err != nil {
 		fmt.Println("d.multicall call error: ", err)
 	}
-	// fmt.Println(output)
-	fmt.Println(len(output))
-	// fmt.Println(output[1])
+	fmt.Printf("Found %d torrents\n", len(output))
 
 	torrents := make([]Torrent, len(output))
 	for i := 0; i < len(output); i++ {
@@ -54,7 +52,16 @@ func main() {
 			BytesDone:         data[1].(int64),
 			ConnectionCurrent: data[2].(string),
 			CreationDate:      data[3].(int64),
-			GetDownRate:       data[3].(int64),
+			GetDownRate:       data[4].(int64),
+			GetDownTotal:      data[5].(int64),
+			SizeBytes:         data[6].(int64),
+			SizeFiles:         data[7].(int64),
+			State:             data[8].(int64),
+			LoadDate:          data[9].(int64),
+			Ratio:             data[10].(int64),
+			GetUpRate:         data[11].(int64),
+			GetUpTotal:        data[12].(int64),
+			Hash:              data[13].(string),
 		}
 		// fmt.Println(torrent)
 		// fmt.Println(i)
@@ -62,7 +69,5 @@ func main() {
 		torrents[i] = torrent
 	}
 
-	fmt.Printf("length: %#v\n", len(torrents))
 	fmt.Printf("%#v\n", torrents[0])
-	fmt.Printf("%#v\n", torrents[166])
 }
