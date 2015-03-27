@@ -1,4 +1,3 @@
-<html>
   <head>
     <title>Hello React</title>
     <script src="https://fb.me/react-0.13.1.js"></script>
@@ -6,6 +5,14 @@
     <script src="https://code.jquery.com/jquery-1.10.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"></script>
     <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
+    <style>
+      .center{
+        text-align: center;
+      }
+      .done_total {
+        width: 150px;
+      }
+    </style>
   </head>
   <body>
     <div id="content"></div>
@@ -39,14 +46,13 @@
                 <tr>
                   <th>Tracker</th>
                   <th>Name</th>
-                  <th>Files</th>
-                  <th>Size in bytes</th>
-                  <th>Bytes done</th>
-                  <th>Down rate</th>
-                  <th>Up rate</th>
-                  <th>Up total</th>
-                  <th>Ratio</th>
-                  <th>Peers Connected</th>
+                  <th className="center">Files</th>
+                  <th className="done_total center">Done / Total</th>
+                  <th className="center">Down rate</th>
+                  <th className="center">Up rate</th>
+                  <th className="center">Up total</th>
+                  <th className="center">Ratio</th>
+                  <th className="center">Peers Connected</th>
                 </tr>
               </thead>
               <tbody>
@@ -67,14 +73,13 @@
             <tr className="torrent">
               <td>{this.props.data.tracker}</td>
               <td onClick={this.onClick}>{this.props.data.name}</td>
-              <td>{this.props.data.size_files}</td>
-              <td>{this.props.data.size_bytes}</td>
-              <td>{this.props.data.bytes_done}</td>
-              <td>{this.props.data.get_down_rate}</td>
-              <td>{this.props.data.get_up_rate}</td>
-              <td>{this.props.data.get_up_total}</td>
-              <td>{this.props.data.ratio}</td>
-              <td>{this.props.data.peers_connected}</td>
+              <td className="center">{this.props.data.size_files}</td>
+              <td className="done_total center">{this.props.data.bytes_done} / {this.props.data.size_bytes}</td>
+              <td className="center">{this.props.data.get_down_rate}</td>
+              <td className="center">{this.props.data.get_up_rate}</td>
+              <td className="center">{this.props.data.get_up_total}</td>
+              <td className="center">{this.props.data.ratio}</td>
+              <td className="center">{this.props.data.peers_connected}</td>
             </tr>
           );
         }
