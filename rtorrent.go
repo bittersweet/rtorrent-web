@@ -193,6 +193,12 @@ func handleTrackers(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 
+func handleStatic(w http.ResponseWriter, r *http.Request) {
+	defer trackTime(time.Now(), "handleStatic")
+
+	http.ServeFile(w, r, r.URL.Path[1:])
+}
+
 func stateMonitor() chan<- *Tracker {
 	updates := make(chan *Tracker)
 	go func() {
@@ -288,6 +294,7 @@ func main() {
 	mux.HandleFunc("/torrents/{hash}.json", handleTorrentJson)
 	mux.HandleFunc("/torrents/{hash}", handleTorrent)
 	mux.HandleFunc("/trackers", handleTrackers)
+	mux.HandleFunc("/static/{file}", handleStatic)
 	fmt.Println("Will start listening on port 8000")
 	http.ListenAndServe(":8000", mux)
 }
