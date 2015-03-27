@@ -38,10 +38,11 @@ type Torrent struct {
 }
 
 type File struct {
-	Name      string `json:"name"`
-	SizeBytes string `json:"size_bytes"`
-	Priority  int64  `json:"priority"`
-	IsOpen    int64  `json:"is_open"`
+	Name            string `json:"name"`
+	SizeBytes       string `json:"size_bytes"`
+	Priority        int64  `json:"priority"`
+	IsOpen          int64  `json:"is_open"`
+	CompletedChunks int64  `json:"completed_chunks"`
 }
 
 type Tracker struct {
@@ -89,7 +90,7 @@ func (t *Torrent) setTracker() {
 
 func getFiles(hash string) []File {
 	var output [][]interface{}
-	args := []interface{}{hash, 0, "f.get_path=", "f.size_bytes=", "f.get_priority=", "f.is_open="}
+	args := []interface{}{hash, 0, "f.get_path=", "f.size_bytes=", "f.get_priority=", "f.is_open=", "f.get_completed_chunks="}
 	if err := client.Call("f.multicall", args, &output); err != nil {
 		fmt.Println("d.multicall call error: ", err)
 	}
@@ -101,10 +102,11 @@ func getFiles(hash string) []File {
 		fmt.Printf("%#v\n", data)
 
 		file := File{
-			Name:      data[0].(string),
-			SizeBytes: humanize.Bytes(uint64(data[1].(int64))),
-			Priority:  data[2].(int64),
-			IsOpen:    data[3].(int64),
+			Name:            data[0].(string),
+			SizeBytes:       humanize.Bytes(uint64(data[1].(int64))),
+			Priority:        data[2].(int64),
+			IsOpen:          data[3].(int64),
+			CompletedChunks: data[4].(int64),
 		}
 		files[i] = file
 	}

@@ -39,6 +39,8 @@
                 <tr>
                   <th>Filename</th>
                   <th>Size in bytes</th>
+                  <th>Priority</th>
+                  <th>Is Open</th>
                 </tr>
               </thead>
               <tbody>
@@ -55,6 +57,8 @@
             <tr className="torrent">
               <td>{this.props.data.name}</td>
               <td>{this.props.data.size_bytes}</td>
+              <td>{this.props.data.priority}</td>
+              <td>{this.props.data.is_open}</td>
             </tr>
           );
         }
