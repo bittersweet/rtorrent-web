@@ -28,13 +28,19 @@ type Torrent struct {
 	SizeFiles         int64  `json:"size_files"`
 	State             int64  `json:"state"`
 	LoadDate          int64  `json:"load_date"`
-	Ratio             int64  `json:"ratio"`
+	RatioRaw          int64
+	Ratio             string `json:"ratio"`
 	GetUpRate         string `json:"get_up_rate"`
 	GetUpRateRaw      int64
 	GetUpTotal        string `json:"get_up_total"`
 	Hash              string `json:"hash"`
 	PeersConnected    int64  `json:"peers_connected"`
 	Tracker           string `json:"tracker"`
+}
+
+func (t *Torrent) FormatRatio() string {
+	result := float64(t.RatioRaw) / 1000
+	return fmt.Sprintf("%.2f", result)
 }
 
 type File struct {
@@ -136,6 +142,7 @@ func handleTorrents(w http.ResponseWriter, r *http.Request) {
 		// Work around to pass by value or pointer type thing
 		// updating in setTracker didn't work
 		torrents[i] = torrent
+		torrents[i].Ratio = torrents[i].FormatRatio()
 	}
 
 	output, err := json.MarshalIndent(&torrents, "", "  ")
@@ -225,7 +232,7 @@ func getTorrents() []Torrent {
 			SizeFiles:         data[7].(int64),
 			State:             data[8].(int64),
 			LoadDate:          data[9].(int64),
-			Ratio:             data[10].(int64),
+			RatioRaw:          data[10].(int64),
 			GetUpRate:         humanize.Bytes(uint64(data[11].(int64))),
 			GetUpRateRaw:      data[11].(int64),
 			GetUpTotal:        humanize.Bytes(uint64(data[12].(int64))),

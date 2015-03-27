@@ -41,10 +41,11 @@
                   <th>Name</th>
                   <th>Files</th>
                   <th>Size in bytes</th>
-                  <th>Down rate</th>
                   <th>Bytes done</th>
+                  <th>Down rate</th>
                   <th>Up rate</th>
                   <th>Up total</th>
+                  <th>Ratio</th>
                   <th>Peers Connected</th>
                 </tr>
               </thead>
@@ -68,10 +69,11 @@
               <td onClick={this.onClick}>{this.props.data.name}</td>
               <td>{this.props.data.size_files}</td>
               <td>{this.props.data.size_bytes}</td>
-              <td>{this.props.data.get_down_rate}</td>
               <td>{this.props.data.bytes_done}</td>
+              <td>{this.props.data.get_down_rate}</td>
               <td>{this.props.data.get_up_rate}</td>
               <td>{this.props.data.get_up_total}</td>
+              <td>{this.props.data.ratio}</td>
               <td>{this.props.data.peers_connected}</td>
             </tr>
           );
