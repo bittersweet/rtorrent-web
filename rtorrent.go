@@ -20,14 +20,16 @@ var trackers = map[string]string{}
 type Torrent struct {
 	Name              string `json:"name"`
 	BytesDone         string `json:"bytes_done"`
+	BytesDoneRaw      int64
 	ConnectionCurrent string `json:"connection_current"`
 	CreationDate      int64  `json:"creation_date"`
 	GetDownRate       string `json:"get_down_rate"`
 	GetDownTotal      string `json:"get_down_total"`
 	SizeBytes         string `json:"size_bytes"`
-	SizeFiles         int64  `json:"size_files"`
-	State             int64  `json:"state"`
-	LoadDate          int64  `json:"load_date"`
+	SizeBytesRaw      int64
+	SizeFiles         int64 `json:"size_files"`
+	State             int64 `json:"state"`
+	LoadDate          int64 `json:"load_date"`
 	RatioRaw          int64
 	Ratio             string `json:"ratio"`
 	GetUpRate         string `json:"get_up_rate"`
@@ -36,11 +38,17 @@ type Torrent struct {
 	Hash              string `json:"hash"`
 	PeersConnected    int64  `json:"peers_connected"`
 	Tracker           string `json:"tracker"`
+	PercentageDone    string `json:"percentage_done"`
 }
 
 func (t *Torrent) FormatRatio() string {
 	result := float64(t.RatioRaw) / 1000
 	return fmt.Sprintf("%.2f", result)
+}
+
+func (t *Torrent) CalculateCompletedPercentage() string {
+	result := float64(t.BytesDoneRaw) / float64(t.SizeBytesRaw) * 100
+	return fmt.Sprintf("%.0f%%", result)
 }
 
 type File struct {
@@ -143,6 +151,7 @@ func handleTorrents(w http.ResponseWriter, r *http.Request) {
 		// updating in setTracker didn't work
 		torrents[i] = torrent
 		torrents[i].Ratio = torrents[i].FormatRatio()
+		torrents[i].PercentageDone = torrents[i].CalculateCompletedPercentage()
 	}
 
 	output, err := json.MarshalIndent(&torrents, "", "  ")
@@ -224,11 +233,13 @@ func getTorrents() []Torrent {
 		torrent := Torrent{
 			Name:              data[0].(string),
 			BytesDone:         humanize.Bytes(uint64(data[1].(int64))),
+			BytesDoneRaw:      data[1].(int64),
 			ConnectionCurrent: data[2].(string),
 			CreationDate:      data[3].(int64),
 			GetDownRate:       humanize.Bytes(uint64(data[4].(int64))),
 			GetDownTotal:      humanize.Bytes(uint64(data[5].(int64))),
 			SizeBytes:         humanize.Bytes(uint64(data[6].(int64))),
+			SizeBytesRaw:      data[6].(int64),
 			SizeFiles:         data[7].(int64),
 			State:             data[8].(int64),
 			LoadDate:          data[9].(int64),
