@@ -1,12 +1,14 @@
 var Menu = React.createClass({
     filterUploads: function() {
-        // call method from parent
-        this.props.onClick(true);
+        this.props.filter('uploads');
+    },
+
+    filterDownloads: function() {
+        this.props.filter('downloads');
     },
 
     removeFilters: function() {
-        console.log("remove filters");
-        this.props.onClick(false);
+        this.props.filter('none');
     },
 
     render: function() {
@@ -15,6 +17,8 @@ var Menu = React.createClass({
             <div className="menu">
                 <a href="#" onClick={this.filterUploads}>Uploading only</a>
                 {' '}
+                <a href="#" onClick={this.filterDownloads}>Downloading only</a>
+                {' '}
                 <a href="#" onClick={this.removeFilters}>Show all</a>
             </div>
         )
@@ -22,19 +26,20 @@ var Menu = React.createClass({
 });
 
 var App = React.createClass({
-    onClick: function(state) {
-        this.setState({filtered: state});
+    filter: function(filter) {
+        console.log(filter);
+        this.setState({filterOn: filter});
     },
 
     getInitialState: function() {
-        return {filtered: false};
+        return {filterOn: "none"};
     },
 
     render: function() {
         return (
             <div>
-                <Menu onClick={this.onClick} />
-                <TorrentList pollInterval={2000} filtered={this.state.filtered} />
+                <Menu filter={this.filter} />
+                <TorrentList pollInterval={2000} filterOn={this.state.filterOn} />
             </div>
         )
     }
@@ -61,18 +66,28 @@ var TorrentList = React.createClass({
     },
 
     render: function() {
-        var filtered = this.props.filtered;
+        var filterOn = this.props.filterOn;
         var torrents = this.state.data.map(function (torrent) {
-            if (filtered) {
-                if (parseInt(torrent.get_up_rate) > 0) {
+            switch(filterOn) {
+                case "uploads":
+                    if (parseInt(torrent.get_up_rate) > 0) {
+                        return (
+                            <Torrent key={torrent.hash} data={torrent} />
+                        );
+                    }
+                    break;
+                case "downloads":
+                    if (parseInt(torrent.get_down_rate) > 0) {
+                        return (
+                            <Torrent key={torrent.hash} data={torrent} />
+                        );
+                    }
+                    break;
+                case "none":
                     return (
                         <Torrent key={torrent.hash} data={torrent} />
                     );
-                }
-            } else {
-                return (
-                    <Torrent key={torrent.hash} data={torrent} />
-                );
+                    break;
             }
         });
         return (
