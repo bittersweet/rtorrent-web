@@ -1,11 +1,53 @@
+var Menu = React.createClass({
+    filterUploads: function() {
+        // call method from parent
+        this.props.onClick(true);
+    },
+
+    removeFilters: function() {
+        console.log("remove filters");
+        this.props.onClick(false);
+    },
+
+    render: function() {
+        console.log("rendering:");
+        return (
+            <div className="menu">
+                <a href="#" onClick={this.filterUploads}>Uploading only</a>
+                {' '}
+                <a href="#" onClick={this.removeFilters}>Show all</a>
+            </div>
+        )
+    }
+});
+
+var App = React.createClass({
+    onClick: function(state) {
+        this.setState({filtered: state});
+    },
+
+    getInitialState: function() {
+        return {filtered: false};
+    },
+
+    render: function() {
+        return (
+            <div>
+                <Menu onClick={this.onClick} />
+                <TorrentList pollInterval={2000} filtered={this.state.filtered} />
+            </div>
+        )
+    }
+});
+
 var TorrentList = React.createClass({
     loadTorrents: function() {
         $.ajax({
-        url: 'http://localhost:8000/torrents',
-        dataType: 'json',
-        success: function(data) {
-            this.setState({data: data});
-        }.bind(this)
+            url: 'http://localhost:8000/torrents',
+            dataType: 'json',
+            success: function(data) {
+                this.setState({data: data});
+            }.bind(this)
         });
     },
 
@@ -19,10 +61,19 @@ var TorrentList = React.createClass({
     },
 
     render: function() {
+        var filtered = this.props.filtered;
         var torrents = this.state.data.map(function (torrent) {
-            return (
-                <Torrent data={torrent} />
-            );
+            if (filtered) {
+                if (parseInt(torrent.get_up_rate) > 0) {
+                    return (
+                        <Torrent key={torrent.hash} data={torrent} />
+                    );
+                }
+            } else {
+                return (
+                    <Torrent key={torrent.hash} data={torrent} />
+                );
+            }
         });
         return (
             <table class="pure-table" className="torrentList pure-table pure-table-striped">
@@ -73,7 +124,7 @@ var Torrent = React.createClass({
 });
 
 React.render(
-    <TorrentList pollInterval={2000} />,
+    <App />,
     document.getElementById('content')
 );
 
