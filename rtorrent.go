@@ -24,6 +24,7 @@ type Torrent struct {
 	ConnectionCurrent string `json:"connection_current"`
 	CreationDate      int64  `json:"creation_date"`
 	GetDownRate       string `json:"get_down_rate"`
+	GetDownRateRaw    int64  `json:"get_down_rate_raw"`
 	GetDownTotal      string `json:"get_down_total"`
 	SizeBytes         string `json:"size_bytes"`
 	SizeBytesRaw      int64
@@ -33,7 +34,7 @@ type Torrent struct {
 	RatioRaw          int64
 	Ratio             string `json:"ratio"`
 	GetUpRate         string `json:"get_up_rate"`
-	GetUpRateRaw      int64
+	GetUpRateRaw      int64  `json:"get_up_rate_raw"`
 	GetUpTotal        string `json:"get_up_total"`
 	Hash              string `json:"hash"`
 	PeersConnected    int64  `json:"peers_connected"`
@@ -243,6 +244,7 @@ func getTorrents() []Torrent {
 			ConnectionCurrent: data[2].(string),
 			CreationDate:      data[3].(int64),
 			GetDownRate:       humanize.Bytes(uint64(data[4].(int64))),
+			GetDownRateRaw:    data[4].(int64),
 			GetDownTotal:      humanize.Bytes(uint64(data[5].(int64))),
 			SizeBytes:         humanize.Bytes(uint64(data[6].(int64))),
 			SizeBytesRaw:      data[6].(int64),
