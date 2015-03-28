@@ -19,8 +19,6 @@ var Menu = React.createClass({
     },
 
     render: function() {
-        var upload = this.props.statistics.totalUploadRate.fileSize();
-        var download = this.props.statistics.totalDownloadRate.fileSize();
         return (
             <div className="menu">
                 <a href="#" onClick={this.filterUploads}>Uploading only</a>
@@ -28,13 +26,37 @@ var Menu = React.createClass({
                 <a href="#" onClick={this.filterDownloads}>Downloading only</a>
                 {' '}
                 <a href="#" onClick={this.removeFilters}>Show all</a>
-                {' '}
-                <span>{upload}</span>
-                {' '}
-                <span>{download}</span>
             </div>
         )
     }
+});
+
+var Statistics = React.createClass({
+    updateCounts: function() {
+        var up = 0;
+        var down = 0;
+        this.props.data.map(function(torrent) {
+            up += torrent.get_up_rate_raw;
+            down += torrent.get_down_rate_raw;
+        });
+        this.setState({up: up.fileSize(), down: down.fileSize()})
+    },
+
+    getInitialState: function() {
+        return {
+            up: 0, down: 0
+        };
+    },
+
+    componentWillReceiveProps: function() {
+        this.updateCounts()
+    },
+
+    render: function() {
+        return (
+            <div className="statistics">upload: {this.state.up}, download: {this.state.down}</div>
+        )
+    },
 });
 
 var App = React.createClass({
@@ -42,28 +64,15 @@ var App = React.createClass({
         this.setState({filterOn: filter});
     },
 
-    updateCounts: function(data) {
-        var up = 0;
-        var down = 0;
-        data.map(function (torrent) {
-            up += torrent.get_up_rate_raw;
-            down += torrent.get_down_rate_raw;
-        });
-        this.setState({statistics: {totalUploadRate: up, totalDownloadRate: down}})
-    },
-
     getInitialState: function() {
-        return {
-            filterOn: "none",
-            statistics: {totalUploadRate: 0, totalDownloadRate: 0}
-        };
+        return { filterOn: "none" };
     },
 
     render: function() {
         return (
             <div>
-                <Menu filter={this.filter} statistics={this.state.statistics} />
-                <TorrentList pollInterval={2000} filterOn={this.state.filterOn} updateCounts={this.updateCounts} />
+                <Menu filter={this.filter} />
+                <TorrentList pollInterval={2000} filterOn={this.state.filterOn} />
             </div>
         )
     }
@@ -76,7 +85,6 @@ var TorrentList = React.createClass({
             dataType: 'json',
             success: function(data) {
                 this.setState({data: data});
-                this.props.updateCounts(data);
             }.bind(this)
         });
     },
@@ -115,25 +123,29 @@ var TorrentList = React.createClass({
                     break;
             }
         });
+
         return (
-            <table className="torrentList pure-table pure-table-striped">
-                <thead>
-                <tr>
-                    <th>Tracker</th>
-                    <th>Name</th>
-                    <th className="center">Files</th>
-                    <th className="done_total center">Done / Total</th>
-                    <th className="center">Down rate</th>
-                    <th className="center">Up rate</th>
-                    <th className="center">Up total</th>
-                    <th className="center">Ratio</th>
-                    <th className="center">Peers Connected</th>
-                </tr>
-                </thead>
-                <tbody>
-                {torrents}
-                </tbody>
-            </table>
+            <div>
+                <Statistics data={this.state.data} />
+                <table className="torrentList pure-table pure-table-striped">
+                    <thead>
+                    <tr>
+                        <th>Tracker</th>
+                        <th>Name</th>
+                        <th className="center">Files</th>
+                        <th className="done_total center">Done / Total</th>
+                        <th className="center">Down rate</th>
+                        <th className="center">Up rate</th>
+                        <th className="center">Up total</th>
+                        <th className="center">Ratio</th>
+                        <th className="center">Peers Connected</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {torrents}
+                    </tbody>
+                </table>
+            </div>
         );
     }
 });
