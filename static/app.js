@@ -219,6 +219,7 @@ var Torrent = React.createClass({
     },
 
     render: function() {
+        var up_total = this.props.data.get_up_total.fileSize()
         return (
             <tr className="torrent">
                 <td>{this.props.data.tracker}</td>
@@ -229,7 +230,7 @@ var Torrent = React.createClass({
                 </td>
                 <td className="center">{this.props.data.get_down_rate}</td>
                 <td className="center">{this.props.data.get_up_rate}</td>
-                <td className="center">{this.props.data.get_up_total}</td>
+                <td className="center">{up_total}</td>
                 <td className="center">{this.props.data.ratio}</td>
                 <td className="center">{this.props.data.peers_connected}</td>
             </tr>
