@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/bittersweet/xmlrpc"
 	"github.com/dustin/go-humanize"
 	"github.com/gorilla/mux"
-	"github.com/kolo/xmlrpc"
 )
 
 var client *xmlrpc.Client
