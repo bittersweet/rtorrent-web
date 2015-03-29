@@ -144,7 +144,12 @@ var TorrentList = React.createClass({
             torrents = torrents.sort(function(a, b) {
                 switch(sortOn) {
                     case "name":
-                        return b.props.data.name - a.props.data.name;
+                        var nameA = a.props.data.name.toLowerCase();
+                        var nameB = b.props.data.name.toLowerCase();
+                        if (nameA < nameB) {
+                            return -1;
+                        }
+                        return 0;
                         break;
                     case "download":
                         return b.props.data.get_down_rate_raw - a.props.data.get_down_rate_raw;
@@ -158,8 +163,6 @@ var TorrentList = React.createClass({
                     case "ratio":
                         return b.props.data.ratio - a.props.data.ratio;
                         break;
-                    case "default":
-                        return a - b;
                 }
             });
         }
