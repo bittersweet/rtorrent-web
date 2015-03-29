@@ -18,6 +18,26 @@ var Menu = React.createClass({
         this.props.filter('none');
     },
 
+    sortOnDownRate: function() {
+        this.props.sort('download');
+    },
+
+    sortOnUpRate: function() {
+        this.props.sort('upload');
+    },
+
+    sortOnTotalUp: function() {
+        this.props.sort('up_total');
+    },
+
+    sortOnRatio: function() {
+        this.props.sort('ratio');
+    },
+
+    removeSorting: function() {
+        this.props.sort('default');
+    },
+
     render: function() {
         return (
             <div className="menu">
@@ -26,6 +46,18 @@ var Menu = React.createClass({
                 <a href="#" onClick={this.filterDownloads}>Downloading only</a>
                 {' '}
                 <a href="#" onClick={this.removeFilters}>Show all</a>
+                {' '}
+                filter on:
+                {' '}
+                <a href="#" onClick={this.removeSorting}>none</a>
+                {' '}
+                <a href="#" onClick={this.sortOnDownRate}>down rate</a>
+                {' '}
+                <a href="#" onClick={this.sortOnUpRate}>up rate</a>
+                {' '}
+                <a href="#" onClick={this.sortOnTotalUp}>total up</a>
+                {' '}
+                <a href="#" onClick={this.sortOnRatio}>ratio</a>
             </div>
         )
     }
@@ -64,15 +96,22 @@ var App = React.createClass({
         this.setState({filterOn: filter});
     },
 
+    sort: function(sortOn) {
+        this.setState({sortOn: sortOn});
+    },
+
     getInitialState: function() {
-        return { filterOn: "none" };
+        return {
+            filterOn: "none",
+            sortOn: "default",
+        };
     },
 
     render: function() {
         return (
             <div>
-                <Menu filter={this.filter} />
-                <TorrentList pollInterval={2000} filterOn={this.state.filterOn} />
+                <Menu filter={this.filter} sort={this.sort} />
+                <TorrentList pollInterval={2000} filterOn={this.state.filterOn} sortOn={this.state.sortOn}/>
             </div>
         )
     }
@@ -100,7 +139,9 @@ var TorrentList = React.createClass({
 
     render: function() {
         var filterOn = this.props.filterOn;
-        var torrents = this.state.data.map(function (torrent) {
+        var sortOn = this.props.sortOn;
+
+        var torrents = this.state.data.map(function(torrent) {
             switch(filterOn) {
                 case "uploads":
                     if (parseInt(torrent.get_up_rate) > 0) {
@@ -123,6 +164,27 @@ var TorrentList = React.createClass({
                     break;
             }
         });
+
+        if (sortOn != "default") {
+            torrents = torrents.sort(function(a, b) {
+                switch(sortOn) {
+                    case "upload":
+                        return b.props.data.get_up_rate_raw - a.props.data.get_up_rate_raw;
+                        break;
+                    case "download":
+                        return b.props.data.get_down_rate_raw - a.props.data.get_down_rate_raw;
+                        break;
+                    case "up_total":
+                        return b.props.data.get_up_total - a.props.data.get_up_total;
+                        break;
+                    case "ratio":
+                        return b.props.data.ratio - a.props.data.ratio;
+                        break;
+                    case "default":
+                        return a - b;
+                }
+            });
+        }
 
         return (
             <div>
