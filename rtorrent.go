@@ -135,10 +135,58 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "static/index.html")
 }
 
+func rtorrentMethodFromString(status string) string {
+	switch status {
+	case "stop":
+		return "d.stop"
+	case "start":
+		return "d.start"
+	case "remove":
+		return "d.erase"
+	}
+
+	return "d.start"
+}
+
+func changeStatus(hash string, status string) {
+	method := rtorrentMethodFromString(status)
+	var statusCode int
+	if err := client.Call(method, []interface{}{hash, 0}, &statusCode); err != nil {
+		log.Fatal("error: ", err)
+	}
+
+	fmt.Printf("%#v\n", statusCode)
+}
+
 func handleTorrent(w http.ResponseWriter, r *http.Request) {
 	defer trackTime(time.Now(), "handleTorrent")
 
 	http.ServeFile(w, r, "static/show.html")
+}
+
+func handleTorrentChangeStatus(w http.ResponseWriter, r *http.Request) {
+	defer trackTime(time.Now(), "handleTorrentChangeStatus")
+
+	vars := mux.Vars(r)
+	hash := vars["hash"]
+
+	u, _ := url.Parse(r.URL.String())
+	queryParams := u.Query()
+	requestedStatus := queryParams["status"][0]
+	changeStatus(hash, requestedStatus)
+
+	response := map[string]string{
+		"status": "ok",
+	}
+
+	output, err := json.MarshalIndent(response, "", "  ")
+	if err != nil {
+		log.Fatal("MarshalIndent", err)
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Write(output)
 }
 
 func handleTorrents(w http.ResponseWriter, r *http.Request) {
@@ -295,6 +343,7 @@ func main() {
 	mux.HandleFunc("/torrents", handleTorrents)
 	mux.HandleFunc("/torrents/{hash}.json", handleTorrentJson)
 	mux.HandleFunc("/torrents/{hash}", handleTorrent)
+	mux.HandleFunc("/torrents/{hash}/changestatus", handleTorrentChangeStatus)
 	mux.HandleFunc("/trackers", handleTrackers)
 	mux.HandleFunc("/static/{file}", handleStatic)
 	fmt.Println("Will start listening on port 8000")

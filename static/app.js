@@ -174,6 +174,7 @@ var TorrentList = React.createClass({
                     <thead>
                     <tr>
                         <th>Tracker</th>
+                        <th>Status</th>
                         <th id="name" onClick={this.sort}>Name</th>
                         <th className="center">Files</th>
                         <th className="done_total center">Done / Total</th>
@@ -199,15 +200,43 @@ var Torrent = React.createClass({
         window.open(url, '_blank');
     },
 
+    changeStatus: function(event) {
+        var url = 'http://localhost:8000/torrents/' + this.props.data.hash + '/changestatus?status=' + event.target.text;
+
+        $.get(url, function(data) {
+            console.log(data);
+        });
+    },
+
     render: function() {
         var up_total = this.props.data.get_up_total.fileSize()
+        var state;
+        switch(this.props.data.state) {
+            case 0:
+                state = "stopped"
+                break;
+            case 1:
+                state = "started"
+                break;
+        }
+        var stopLink = '<a href="#markie">stop</a>';
+
         return (
             <tr className="torrent">
                 <td>{this.props.data.tracker}</td>
-                <td onClick={this.onClick}>{this.props.data.name}</td>
+                <td>{state}</td>
+                <td>
+                <span onClick={this.onClick}>{this.props.data.name}</span>
+                { ' ' }
+                <a href="#" onClick={this.changeStatus}>stop</a>
+                { ' ' }
+                <a href="#" onClick={this.changeStatus}>start</a>
+                { ' ' }
+                <a href="#" onClick={this.changeStatus}>remove</a>
+                </td>
                 <td className="center">{this.props.data.size_files}</td>
                 <td className="done_total center">
-                {this.props.data.bytes_done} / {this.props.data.size_bytes} ({this.props.data.percentage_done})
+                  {this.props.data.bytes_done} / {this.props.data.size_bytes} ({this.props.data.percentage_done})
                 </td>
                 <td className="center">{this.props.data.get_down_rate}</td>
                 <td className="center">{this.props.data.get_up_rate}</td>
