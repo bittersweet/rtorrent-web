@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"os/exec"
 	"time"
 
 	"github.com/bittersweet/xmlrpc"
@@ -58,6 +60,7 @@ type File struct {
 	Priority        int64  `json:"priority"`
 	IsOpen          int64  `json:"is_open"`
 	CompletedChunks int64  `json:"completed_chunks"`
+	FrozenPath      string `json:"get_frozen_path"`
 }
 
 type Tracker struct {
@@ -105,7 +108,7 @@ func (t *Torrent) setTracker() {
 
 func getFiles(hash string) []File {
 	var output [][]interface{}
-	args := []interface{}{hash, 0, "f.get_path=", "f.size_bytes=", "f.get_priority=", "f.is_open=", "f.get_completed_chunks="}
+	args := []interface{}{hash, 0, "f.get_path=", "f.size_bytes=", "f.get_priority=", "f.is_open=", "f.get_completed_chunks=", "f.get_frozen_path="}
 	if err := client.Call("f.multicall", args, &output); err != nil {
 		fmt.Println("d.multicall call error: ", err)
 	}
@@ -122,6 +125,7 @@ func getFiles(hash string) []File {
 			Priority:        data[2].(int64),
 			IsOpen:          data[3].(int64),
 			CompletedChunks: data[4].(int64),
+			FrozenPath:      data[5].(string),
 		}
 		files[i] = file
 	}
@@ -158,6 +162,29 @@ func changeStatus(hash string, status string) {
 	fmt.Printf("%#v\n", statusCode)
 }
 
+func copyTorrent(hash string) {
+	files := getFiles(hash)
+
+	destinationFolder := os.Getenv("DESTINATIONFOLDER")
+
+	for _, file := range files {
+		source := file.FrozenPath
+		target := fmt.Sprintf("%s/%s", destinationFolder, file.Name)
+
+		copyFile(source, target)
+	}
+}
+
+func copyFile(source string, target string) {
+	mvCmd := exec.Command("mv", source, target)
+	err := mvCmd.Run()
+
+	fmt.Printf("Copying %s to %s\n", source, target)
+	if err != nil {
+		log.Fatal("Copying file failure: ", err)
+	}
+}
+
 func handleTorrent(w http.ResponseWriter, r *http.Request) {
 	defer trackTime(time.Now(), "handleTorrent")
 
@@ -174,6 +201,28 @@ func handleTorrentChangeStatus(w http.ResponseWriter, r *http.Request) {
 	queryParams := u.Query()
 	requestedStatus := queryParams["status"][0]
 	changeStatus(hash, requestedStatus)
+
+	response := map[string]string{
+		"status": "ok",
+	}
+
+	output, err := json.MarshalIndent(response, "", "  ")
+	if err != nil {
+		log.Fatal("MarshalIndent", err)
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Write(output)
+}
+
+func handleTorrentCopy(w http.ResponseWriter, r *http.Request) {
+	defer trackTime(time.Now(), "handleTorrentCopy")
+
+	vars := mux.Vars(r)
+	hash := vars["hash"]
+
+	copyTorrent(hash)
 
 	response := map[string]string{
 		"status": "ok",
@@ -340,10 +389,11 @@ func main() {
 
 	mux := mux.NewRouter()
 	mux.HandleFunc("/", handleIndex)
-	mux.HandleFunc("/torrents", handleTorrents)
+	mux.HandleFunc("/torrents.json", handleTorrents)
 	mux.HandleFunc("/torrents/{hash}.json", handleTorrentJson)
 	mux.HandleFunc("/torrents/{hash}", handleTorrent)
 	mux.HandleFunc("/torrents/{hash}/changestatus", handleTorrentChangeStatus)
+	mux.HandleFunc("/torrents/{hash}/copy", handleTorrentCopy)
 	mux.HandleFunc("/trackers", handleTrackers)
 	mux.HandleFunc("/static/{file}", handleStatic)
 	fmt.Println("Will start listening on port 8000")

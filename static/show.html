@@ -13,7 +13,7 @@
       var TorrentList = React.createClass({
         loadTorrents: function() {
           $.ajax({
-            url: 'http://localhost:8000' + window.location.pathname + '.json',
+            url: window.location.pathname + '.json',
             dataType: 'json',
             success: function(data) {
               this.setState({data: data});

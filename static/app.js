@@ -83,7 +83,7 @@ var App = React.createClass({
 var TorrentList = React.createClass({
     loadTorrents: function() {
         $.ajax({
-            url: 'http://localhost:8000/torrents',
+            url: '/torrents.json',
             dataType: 'json',
             success: function(data) {
                 this.setState({data: data});
@@ -196,12 +196,24 @@ var TorrentList = React.createClass({
 
 var Torrent = React.createClass({
     onClick: function() {
-        var url = 'http://localhost:8000/torrents/' + this.props.data.hash;
+        var url = '/torrents/' + this.props.data.hash;
         window.open(url, '_blank');
     },
 
     changeStatus: function(event) {
-        var url = 'http://localhost:8000/torrents/' + this.props.data.hash + '/changestatus?status=' + event.target.text;
+        event.preventDefault();
+
+        var url = '/torrents/' + this.props.data.hash + '/changestatus?status=' + event.target.text;
+
+        $.get(url, function(data) {
+            console.log(data);
+        });
+    },
+
+    copyFiles: function(event) {
+        event.preventDefault();
+
+        var url = '/torrents/' + this.props.data.hash + '/copy';
 
         $.get(url, function(data) {
             console.log(data);
@@ -219,7 +231,6 @@ var Torrent = React.createClass({
                 state = "started"
                 break;
         }
-        var stopLink = '<a href="#markie">stop</a>';
 
         return (
             <tr className="torrent">
@@ -233,6 +244,8 @@ var Torrent = React.createClass({
                 <a href="#" onClick={this.changeStatus}>start</a>
                 { ' ' }
                 <a href="#" onClick={this.changeStatus}>remove</a>
+                { ' ' }
+                <a href="#" onClick={this.copyFiles}>copy</a>
                 </td>
                 <td className="center">{this.props.data.size_files}</td>
                 <td className="done_total center">
