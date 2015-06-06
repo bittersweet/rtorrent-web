@@ -11,6 +11,8 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/bittersweet/rtorrent-web/util"
+
 	"github.com/bittersweet/xmlrpc"
 	"github.com/dustin/go-humanize"
 	"github.com/gorilla/mux"
@@ -68,13 +70,8 @@ type Tracker struct {
 	url  string
 }
 
-func trackTime(start time.Time, name string) {
-	elapsed := time.Since(start)
-	log.Printf("%s took %s\n", name, elapsed)
-}
-
 func (t *Torrent) getTracker() string {
-	defer trackTime(time.Now(), "getTracker")
+	defer util.TrackTime(time.Now(), "getTracker")
 
 	var tracker string
 	if err := client.Call("t.get_url", []interface{}{t.Hash, 0}, &tracker); err != nil {
@@ -98,7 +95,7 @@ func (t *Torrent) getTracker() string {
 }
 
 func (t *Torrent) setTracker() {
-	// defer trackTime(time.Now(), "setTracker")
+	// defer util.TrackTime(time.Now(), "setTracker")
 
 	url := trackers[t.Hash]
 	// fmt.Printf("Setting url to %s\\n", url)
@@ -134,7 +131,7 @@ func getFiles(hash string) []File {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-	defer trackTime(time.Now(), "handleIndex")
+	defer util.TrackTime(time.Now(), "handleIndex")
 
 	http.ServeFile(w, r, "static/index.html")
 }
@@ -186,13 +183,13 @@ func copyFile(source string, target string) {
 }
 
 func handleTorrent(w http.ResponseWriter, r *http.Request) {
-	defer trackTime(time.Now(), "handleTorrent")
+	defer util.TrackTime(time.Now(), "handleTorrent")
 
 	http.ServeFile(w, r, "static/show.html")
 }
 
 func handleTorrentChangeStatus(w http.ResponseWriter, r *http.Request) {
-	defer trackTime(time.Now(), "handleTorrentChangeStatus")
+	defer util.TrackTime(time.Now(), "handleTorrentChangeStatus")
 
 	vars := mux.Vars(r)
 	hash := vars["hash"]
@@ -217,7 +214,7 @@ func handleTorrentChangeStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleTorrentCopy(w http.ResponseWriter, r *http.Request) {
-	defer trackTime(time.Now(), "handleTorrentCopy")
+	defer util.TrackTime(time.Now(), "handleTorrentCopy")
 
 	vars := mux.Vars(r)
 	hash := vars["hash"]
@@ -239,7 +236,7 @@ func handleTorrentCopy(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleTorrents(w http.ResponseWriter, r *http.Request) {
-	defer trackTime(time.Now(), "handleTorrents")
+	defer util.TrackTime(time.Now(), "handleTorrents")
 
 	torrents := getTorrents()
 	for i := 0; i < len(torrents); i++ {
@@ -263,7 +260,7 @@ func handleTorrents(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleTorrentJson(w http.ResponseWriter, r *http.Request) {
-	defer trackTime(time.Now(), "handleTorrentJson")
+	defer util.TrackTime(time.Now(), "handleTorrentJson")
 
 	vars := mux.Vars(r)
 	files := getFiles(vars["hash"])
@@ -279,7 +276,7 @@ func handleTorrentJson(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleTrackers(w http.ResponseWriter, r *http.Request) {
-	defer trackTime(time.Now(), "handleTrackers")
+	defer util.TrackTime(time.Now(), "handleTrackers")
 
 	output, err := json.MarshalIndent(&trackers, "", "  ")
 	if err != nil {
@@ -292,7 +289,7 @@ func handleTrackers(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleStatic(w http.ResponseWriter, r *http.Request) {
-	defer trackTime(time.Now(), "handleStatic")
+	defer util.TrackTime(time.Now(), "handleStatic")
 
 	http.ServeFile(w, r, r.URL.Path[1:])
 }
@@ -313,7 +310,7 @@ func stateMonitor() chan<- *Tracker {
 }
 
 func init() {
-	defer trackTime(time.Now(), "init")
+	defer util.TrackTime(time.Now(), "init")
 
 	var err error
 	client, err = xmlrpc.NewClient("http://192.168.2.7:5001/RPC2", nil)
@@ -323,7 +320,7 @@ func init() {
 }
 
 func getTorrents() []Torrent {
-	defer trackTime(time.Now(), "getTorrents")
+	defer util.TrackTime(time.Now(), "getTorrents")
 
 	var output [][]interface{}
 	if err := client.Call("d.multicall", []interface{}{"main", "d.name=", "d.bytes_done=", "d.connection_current=", "d.creation_date=", "d.get_down_rate=", "d.get_down_total=", "d.size_bytes=", "d.size_files=", "d.state=", "d.load_date=", "d.ratio=", "d.get_up_rate=", "d.get_up_total=", "d.hash=", "d.peers_connected="}, &output); err != nil {
@@ -369,8 +366,6 @@ func Poller(process <-chan *Torrent, updates chan<- *Tracker) {
 }
 
 func main() {
-	defer trackTime(time.Now(), "xmlRpc")
-
 	updates := stateMonitor()
 	incoming := make(chan *Torrent)
 
