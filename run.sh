@@ -1,1 +1,1 @@
-go run -a rtorrent.go endpoints.go
+go run -a rtorrent.go endpoints.go sse_broker.go

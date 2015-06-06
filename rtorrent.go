@@ -20,6 +20,9 @@ import (
 var client *xmlrpc.Client
 var trackers = map[string]string{}
 
+// Global channel to send notifications to, they will be sent out as SSE
+var notifier chan []byte
+
 type Torrent struct {
 	Name              string `json:"name"`
 	BytesDone         string `json:"bytes_done"`
@@ -155,6 +158,7 @@ func changeStatus(hash string, status string) {
 func copyTorrent(hash string) {
 	files := getFiles(hash)
 
+	startTime := time.Now()
 	destinationFolder := os.Getenv("DESTINATIONFOLDER")
 
 	for _, file := range files {
@@ -163,6 +167,10 @@ func copyTorrent(hash string) {
 
 		copyFile(source, target)
 	}
+
+	elapsed := time.Since(startTime)
+	eventString := fmt.Sprintf("Torrent moved, elapsed time: %s", elapsed)
+	notifier <- []byte(eventString)
 }
 
 func copyFile(source string, target string) {
@@ -247,6 +255,9 @@ func Poller(process <-chan *Torrent, updates chan<- *Tracker) {
 }
 
 func main() {
+	broker := NewServer()
+	notifier = broker.Notifier
+
 	updates := stateMonitor()
 	incoming := make(chan *Torrent)
 
@@ -272,6 +283,8 @@ func main() {
 	mux.HandleFunc("/torrents/{hash}/copy", handleTorrentCopy)
 	mux.HandleFunc("/trackers", handleTrackers)
 	mux.HandleFunc("/static/{file}", handleStatic)
+
+	go http.ListenAndServe(":8001", broker)
 
 	fmt.Println("Will start listening on port 8000")
 	http.ListenAndServe(":8000", mux)

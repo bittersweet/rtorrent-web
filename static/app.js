@@ -5,6 +5,8 @@ Object.defineProperty(Number.prototype,'fileSize',{value:function(a,b,c,d){
  +' '+(d?(a[1]+'MGTPEZY')[--d]+a[2]:'Bytes');
 },writable:false,enumerable:false});
 
+var hostname = 'http://192.168.2.7:8000';
+
 var Menu = React.createClass({
     filterUploads: function() {
         this.props.filter('uploads');
@@ -83,7 +85,7 @@ var App = React.createClass({
 var TorrentList = React.createClass({
     loadTorrents: function() {
         $.ajax({
-            url: '/torrents.json',
+            url: 'http://192.168.2.7:8000/torrents.json',
             dataType: 'json',
             success: function(data) {
                 this.setState({data: data});
@@ -196,24 +198,24 @@ var TorrentList = React.createClass({
 
 var Torrent = React.createClass({
     onClick: function() {
-        var url = '/torrents/' + this.props.data.hash;
+        var url = hostname + '/torrents/' + this.props.data.hash;
         window.open(url, '_blank');
     },
 
     changeStatus: function(event) {
         event.preventDefault();
 
-        var url = '/torrents/' + this.props.data.hash + '/changestatus?status=' + event.target.text;
+        var url = hostname + '/torrents/' + this.props.data.hash + '/changestatus?status=' + event.target.text;
 
         $.get(url, function(data) {
-            console.log(data);
+            // console.log(data);
         });
     },
 
     copyFiles: function(event) {
         event.preventDefault();
 
-        var url = '/torrents/' + this.props.data.hash + '/copy';
+        var url = hostname + '/torrents/' + this.props.data.hash + '/copy';
 
         $.get(url, function(data) {
             console.log(data);
@@ -260,6 +262,12 @@ var Torrent = React.createClass({
         );
     }
 });
+
+var client = new EventSource("http://192.168.2.7:8001");
+client.onmessage = function(msg) {
+    console.log(msg);
+    new Notification(msg.data);
+}
 
 React.render(
     <App />,
