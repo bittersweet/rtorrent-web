@@ -1,0 +1,9 @@
+{
+  "name": "rtorrent-web",
+  "version": "0.0.1",
+  "main": "main.js",
+  "dependencies": {
+    "react": "~0.13.3",
+    "react-notifications": "0.0.5"
+  }
+}
