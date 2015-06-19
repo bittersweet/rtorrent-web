@@ -20,14 +20,23 @@ var Menu = React.createClass({
         this.props.filter('none');
     },
 
+    filterTorrents: function(event) {
+        this.props.search(event.target.value);
+    },
+
     render: function() {
         return (
-            <div className="menu">
-                <a href="#" onClick={this.filterUploads}>Uploading only</a>
-                {' '}
-                <a href="#" onClick={this.filterDownloads}>Downloading only</a>
-                {' '}
-                <a href="#" onClick={this.removeFilters}>Show all</a>
+            <div>
+                <div className="menu">
+                    <a href="#" onClick={this.filterUploads}>Uploading only</a>
+                    {' '}
+                    <a href="#" onClick={this.filterDownloads}>Downloading only</a>
+                    {' '}
+                    <a href="#" onClick={this.removeFilters}>Show all</a>
+                </div>
+                <div className="search">
+                    <input id="search" onChange={this.filterTorrents} name="search" placeholder="search" type="text" />
+                </div>
             </div>
         )
     }
@@ -66,17 +75,22 @@ var App = React.createClass({
         this.setState({filterOn: filter});
     },
 
+    searchTorrents: function(query) {
+        this.setState({queryOn: query});
+    },
+
     getInitialState: function() {
         return {
             filterOn: "none",
+            queryOn: ""
         };
     },
 
     render: function() {
         return (
             <div>
-                <Menu filter={this.filter} />
-                <TorrentList pollInterval={2000} filterOn={this.state.filterOn} />
+                <Menu filter={this.filter} search={this.searchTorrents} />
+                <TorrentList pollInterval={2000} filterOn={this.state.filterOn} queryOn={this.state.queryOn} />
             </div>
         )
     }
@@ -117,28 +131,43 @@ var TorrentList = React.createClass({
     render: function() {
         var filterOn = this.props.filterOn;
         var sortOn = this.state.sortOn;
+        var queryOn = this.props.queryOn;
 
         var torrents = this.state.data.map(function(torrent) {
+            return (
+                <Torrent key={torrent.hash} data={torrent} />
+            );
+        });
+
+        if (queryOn != "") {
+            torrents = torrents.filter(function(torrent) {
+                torrent = torrent.props.data;
+                return (torrent.name.toLowerCase().indexOf(queryOn) >= 0)
+            });
+        }
+
+        torrents = torrents.filter(function(torrent) {
+            torrent = torrent.props.data;
             switch(filterOn) {
                 case "uploads":
-                    if (parseInt(torrent.get_up_rate) > 0) {
-                        return (
-                            <Torrent key={torrent.hash} data={torrent} />
-                        );
-                    }
-                    break;
-                case "downloads":
-                    if (parseInt(torrent.get_down_rate) > 0) {
-                        return (
-                            <Torrent key={torrent.hash} data={torrent} />
-                        );
-                    }
-                    break;
-                case "none":
+                if (parseInt(torrent.get_up_rate) > 0) {
                     return (
                         <Torrent key={torrent.hash} data={torrent} />
                     );
-                    break;
+                }
+                break;
+                case "downloads":
+                if (parseInt(torrent.get_down_rate) > 0) {
+                    return (
+                        <Torrent key={torrent.hash} data={torrent} />
+                    );
+                }
+                break;
+                case "none":
+                return (
+                    <Torrent key={torrent.hash} data={torrent} />
+                );
+                break;
             }
         });
 
