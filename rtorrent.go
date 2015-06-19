@@ -287,5 +287,8 @@ func main() {
 	go http.ListenAndServe(":8001", broker)
 
 	fmt.Println("Will start listening on port 8000")
-	http.ListenAndServe(":8000", mux)
+	err := http.ListenAndServe(":8000", mux)
+	if err != nil {
+		log.Fatal("Could not start listening", err)
+	}
 }
