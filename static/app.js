@@ -5,7 +5,8 @@ Object.defineProperty(Number.prototype,'fileSize',{value:function(a,b,c,d){
  +' '+(d?(a[1]+'MGTPEZY')[--d]+a[2]:'Bytes');
 },writable:false,enumerable:false});
 
-var hostname = 'http://192.168.2.7:8000';
+// var hostname = 'http://192.168.2.7:8000';
+var hostname = 'http://localhost:8000';
 
 var Menu = React.createClass({
     filterUploads: function() {
@@ -24,20 +25,42 @@ var Menu = React.createClass({
         this.props.search(event.target.value);
     },
 
+    getClassName: function(item) {
+        var cF = this.props.currentFilter;
+        if (item == "uploading" && cF == "uploads") {
+                return "active";
+        }
+        if (item == "downloading" && cF == "downloads") {
+            return "active";
+        }
+        if (item == "all" && cF == "none") {
+            return "active";
+        }
+    },
+
     render: function() {
         return (
-            <div>
-                <div className="menu">
-                    <a href="#" onClick={this.filterUploads}>Uploading only</a>
-                    {' '}
-                    <a href="#" onClick={this.filterDownloads}>Downloading only</a>
-                    {' '}
-                    <a href="#" onClick={this.removeFilters}>Show all</a>
+            <nav>
+                <div className="nav-wrapper menu">
+                    <a href="#" className="brand-logo">Rtorrent-Web</a>
+                    <ul id="nav-mobile" className="right hide-on-med-and-down">
+                        <li>
+                            <div className="search">
+                                <input id="search" onChange={this.filterTorrents} name="search" placeholder="search" type="text" />
+                            </div>
+                        </li>
+                        <li className={this.getClassName('uploading')}>
+                            <a href="#" onClick={this.filterUploads}>Uploading only</a>
+                        </li>
+                        <li className={this.getClassName('downloading')}>
+                            <a href="#" onClick={this.filterDownloads}>Downloading only</a>
+                        </li>
+                        <li className={this.getClassName('all')}>
+                            <a href="#" onClick={this.removeFilters}>Show all</a>
+                        </li>
+                    </ul>
                 </div>
-                <div className="search">
-                    <input id="search" onChange={this.filterTorrents} name="search" placeholder="search" type="text" />
-                </div>
-            </div>
+            </nav>
         )
     }
 });
@@ -89,7 +112,7 @@ var App = React.createClass({
     render: function() {
         return (
             <div>
-                <Menu filter={this.filter} search={this.searchTorrents} />
+                <Menu filter={this.filter} search={this.searchTorrents} currentFilter={this.state.filterOn} />
                 <TorrentList pollInterval={2000} filterOn={this.state.filterOn} queryOn={this.state.queryOn} />
             </div>
         )
@@ -99,7 +122,7 @@ var App = React.createClass({
 var TorrentList = React.createClass({
     loadTorrents: function() {
         $.ajax({
-            url: 'http://192.168.2.7:8000/torrents.json',
+            url: hostname + '/torrents.json',
             dataType: 'json',
             success: function(data) {
                 this.setState({data: data});
@@ -201,7 +224,7 @@ var TorrentList = React.createClass({
         return (
             <div>
                 <Statistics data={this.state.data} />
-                <table className="torrentList pure-table pure-table-striped">
+                <table className="torrentList striped">
                     <thead>
                     <tr>
                         <th>Tracker</th>
@@ -293,9 +316,8 @@ var Torrent = React.createClass({
 });
 
 var client = new EventSource("http://192.168.2.7:8001");
-client.onmessage = function(msg) {
-    console.log(msg);
-    new Notification(msg.data);
+client.onmessage = function(message) {
+    Materialize.toast(message.data, 3000);
 }
 
 React.render(
