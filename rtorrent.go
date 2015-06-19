@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/bittersweet/rtorrent-web/util"
@@ -89,6 +90,11 @@ func (t *Torrent) getTracker() string {
 	if port == "" {
 		host = url.Host
 	}
+
+	// Naive way to turn tracker.domain.tld into domain
+	components := strings.Split(host, ".")
+	host = components[len(components)-2]
+
 	return host
 	// Store an inmemory list of torrents, update that, and let the getTorrents
 	// update fields that have changed
