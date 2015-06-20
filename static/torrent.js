@@ -1,5 +1,7 @@
 import React from "react";
 
+import Actions from "./actions";
+
 var Torrent = React.createClass({
     onClick: function() {
         var url = hostName + '/torrents/' + this.props.data.hash;
@@ -8,22 +10,12 @@ var Torrent = React.createClass({
 
     changeStatus: function(event) {
         event.preventDefault();
-
-        var url = hostName + '/torrents/' + this.props.data.hash + '/changestatus?status=' + event.target.text;
-
-        $.get(url, function(data) {
-            // console.log(data);
-        });
+        Actions.changeStatus(this, event.target.text)
     },
 
     copyFiles: function(event) {
         event.preventDefault();
-
-        var url = hostName + '/torrents/' + this.props.data.hash + '/copy';
-
-        $.get(url, function(data) {
-            console.log(data);
-        });
+        Actions.copyFiles(this);
     },
 
     render: function() {

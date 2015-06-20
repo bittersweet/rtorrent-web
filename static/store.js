@@ -1,6 +1,6 @@
 import Reflux from "reflux";
 // https://github.com/visionmedia/superagent/wiki/Superagent-for-Webpack
-var request = require('superagent');
+var request = require("superagent");
 
 import Actions from "./actions";
 
@@ -18,13 +18,25 @@ var Store = Reflux.createStore({
 
     fetchData: function() {
         request
-        .get('http://localhost:8000/torrents.json')
+        .get(`${ hostName }/torrents.json`)
         .end(function(err, res) {
             var torrents = JSON.parse(res.text);
             this.list = torrents;
 
             this.trigger(this.list);
         }.bind(this));
+    },
+
+    onChangeStatus: function(torrent, newStatus) {
+        var hash = torrent.props.data.hash;
+        var url = `${ hostName }/torrents/${ hash }/changestatus?status=${ newStatus }`;
+        request.post(url, function(){});
+    },
+
+    onCopyFiles: function(torrent) {
+        var hash = torrent.props.data.hash;
+        var url = `${ hostName }/torrents/${ hash }/copy`;
+        request.get(url, function(){});
     },
 });
 
