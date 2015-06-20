@@ -5,7 +5,7 @@ import Torrent from "./torrent";
 var TorrentList = React.createClass({
     loadTorrents: function() {
         $.ajax({
-            url: this.props.hostName + '/torrents.json',
+            url: hostName + '/torrents.json',
             dataType: 'json',
             success: function(data) {
                 this.setState({data: data});

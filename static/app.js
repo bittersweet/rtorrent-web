@@ -1,11 +1,12 @@
 import React from "react";
+
 import Menu from "./menu";
 import Statistics from "./statistics";
 import Torrent from "./torrent";
 import TorrentList from "./torrentlist";
 
-var esHost = "http://localhost:8001";
-var hostName = "http://localhost:8000";
+window.esHost = "http://192.168.2.7:8001";
+window.hostName = "http://192.168.2.7:8000";
 
 // http://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
 Object.defineProperty(Number.prototype,'fileSize',{value:function(a,b,c,d){
@@ -34,7 +35,7 @@ var App = React.createClass({
         return (
             <div>
                 <Menu filter={this.filter} search={this.searchTorrents} currentFilter={this.state.filterOn} />
-                <TorrentList hostName={hostName} pollInterval={2000} filterOn={this.state.filterOn} queryOn={this.state.queryOn} />
+                <TorrentList pollInterval={2000} filterOn={this.state.filterOn} queryOn={this.state.queryOn} />
             </div>
         )
     }
