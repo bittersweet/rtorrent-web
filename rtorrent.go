@@ -283,11 +283,10 @@ func main() {
 	mux := mux.NewRouter()
 	mux.HandleFunc("/", handleIndex)
 	mux.HandleFunc("/torrents.json", handleTorrents)
-	mux.HandleFunc("/torrents/{hash}.json", handleTorrentJson)
 	mux.HandleFunc("/torrents/{hash}", handleTorrent)
+	mux.HandleFunc("/torrents/{hash}.json", handleTorrentFiles)
 	mux.HandleFunc("/torrents/{hash}/changestatus", handleTorrentChangeStatus)
 	mux.HandleFunc("/torrents/{hash}/copy", handleTorrentCopy)
-	mux.HandleFunc("/trackers", handleTrackers)
 	mux.HandleFunc("/static/{file}", handleStatic)
 
 	go http.ListenAndServe(":8001", broker)

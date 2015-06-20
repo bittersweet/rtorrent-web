@@ -57,7 +57,7 @@ func handleTorrents(w http.ResponseWriter, r *http.Request) {
 	w.Write(output)
 }
 
-func handleTorrentJson(w http.ResponseWriter, r *http.Request) {
+func handleTorrentFiles(w http.ResponseWriter, r *http.Request) {
 	defer util.TrackTime(time.Now(), "handleTorrentJson")
 
 	vars := mux.Vars(r)
@@ -117,19 +117,6 @@ func handleTorrentCopy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	output, err := json.MarshalIndent(response, "", "  ")
-	if err != nil {
-		log.Fatal("MarshalIndent", err)
-	}
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Write(output)
-}
-
-func handleTrackers(w http.ResponseWriter, r *http.Request) {
-	defer util.TrackTime(time.Now(), "handleTrackers")
-
-	output, err := json.MarshalIndent(&trackers, "", "  ")
 	if err != nil {
 		log.Fatal("MarshalIndent", err)
 	}
