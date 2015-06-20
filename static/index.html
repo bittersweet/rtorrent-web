@@ -7,7 +7,8 @@
     <script src="https://code.jquery.com/jquery-1.10.0.min.js"></script>
     <script type="text/jsx" src="/static/app.js"></script>
     <script type="text/jsx" src="/static/materialize.js"></script>
-    <link rel="stylesheet" href="/static/materialize.css">
+    <!-- <link rel="stylesheet" href="/static/materialize.css"> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.96.1/css/materialize.min.css">
     <style>
       .center{
         text-align: center;
@@ -22,5 +23,12 @@
   </head>
   <body>
     <div id="content"></div>
+    <script>
+      /* For electron */
+      /* window.hostName = "http://192.168.2.7:8000"; */
+      /* window.esHost = "http://192.168.2.7:8001"; */
+      window.hostName = "{{.hostName}}:8000";
+      window.esHost = "{{.hostName}}:8001";
+    </script>
   </body>
 </html>

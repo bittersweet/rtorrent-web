@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"text/template"
 	"time"
 
 	"github.com/bittersweet/rtorrent-web/util"
@@ -14,7 +16,21 @@ import (
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	defer util.TrackTime(time.Now(), "handleIndex")
 
-	http.ServeFile(w, r, "static/index.html")
+	t, err := template.ParseFiles("static/index.html")
+	if err != nil {
+		log.Fatal("ParseFiles", err)
+	}
+
+	host := util.CurrentIP()
+	hostName := fmt.Sprintf("http://%s", host)
+	data := map[string]interface{}{
+		"hostName": hostName,
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal("t.Execute", err)
+	}
 }
 
 func handleTorrents(w http.ResponseWriter, r *http.Request) {
