@@ -1,18 +1,11 @@
 import React from "react";
+
+import Actions from "./actions";
+
 import Statistics from "./statistics";
 import Torrent from "./torrent";
 
 var TorrentList = React.createClass({
-    loadTorrents: function() {
-        $.ajax({
-            url: hostName + '/torrents.json',
-            dataType: 'json',
-            success: function(data) {
-                this.setState({data: data});
-            }.bind(this)
-        });
-    },
-
     getInitialState: function() {
         return {
             data: [],
@@ -21,12 +14,13 @@ var TorrentList = React.createClass({
     },
 
     componentDidMount: function() {
-        this.loadTorrents();
-        setInterval(this.loadTorrents, this.props.pollInterval);
+        // Will make sure our store fetches torrents
+        Actions.load();
+        setInterval(Actions.load, this.props.pollInterval);
     },
 
     sort: function(object) {
-        sortDirection = object.target.id;
+        var sortDirection = object.target.id;
         if (this.state.sortOn != sortDirection) {
             this.setState({sortOn: sortDirection});
         } else {
@@ -39,7 +33,7 @@ var TorrentList = React.createClass({
         var sortOn = this.state.sortOn;
         var queryOn = this.props.queryOn;
 
-        var torrents = this.state.data.map(function(torrent) {
+        var torrents = this.props.torrents.map(function(torrent) {
             return (
                 <Torrent key={torrent.hash} data={torrent} />
             );
@@ -106,7 +100,7 @@ var TorrentList = React.createClass({
 
         return (
             <div>
-                <Statistics data={this.state.data} />
+                <Statistics torrents={this.props.torrents} />
                 <table className="torrentList striped">
                     <thead>
                     <tr>

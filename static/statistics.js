@@ -4,7 +4,7 @@ var Statistics = React.createClass({
     updateCounts: function() {
         var up = 0;
         var down = 0;
-        this.props.data.map(function(torrent) {
+        this.props.torrents.map(function(torrent) {
             up += torrent.get_up_rate_raw;
             down += torrent.get_down_rate_raw;
         });
