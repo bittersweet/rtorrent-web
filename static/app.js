@@ -1,4 +1,9 @@
 // http://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
+import React from "react";
+
+var esHost = "http://localhost:8001";
+var hostName = "http://localhost:8000";
+
 Object.defineProperty(Number.prototype,'fileSize',{value:function(a,b,c,d){
  return (a=a?[1e3,'k','B']:[1024,'K','iB'],b=Math,c=b.log,
  d=c(this)/c(a[0])|0,this/b.pow(a[0],d)).toFixed(2)
