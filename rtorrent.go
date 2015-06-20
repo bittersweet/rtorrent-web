@@ -100,11 +100,7 @@ func (t *Torrent) getTracker() string {
 }
 
 func (t *Torrent) setTracker() {
-	// defer util.TrackTime(time.Now(), "setTracker")
-
 	url := trackers[t.Hash]
-	// fmt.Printf("Setting url to %s\\n", url)
-	// if key is not in map, do a request
 	t.Tracker = url
 }
 

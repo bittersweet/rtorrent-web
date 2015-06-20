@@ -38,13 +38,10 @@ func handleTorrents(w http.ResponseWriter, r *http.Request) {
 
 	torrents := getTorrents()
 	for i := 0; i < len(torrents); i++ {
-		torrent := torrents[i]
-		torrent.setTracker()
-		// Work around to pass by value or pointer type thing
-		// updating in setTracker didn't work
-		torrents[i] = torrent
-		torrents[i].Ratio = torrents[i].FormatRatio()
-		torrents[i].PercentageDone = torrents[i].CalculateCompletedPercentage()
+		t := &torrents[i]
+		t.setTracker()
+		t.Ratio = t.FormatRatio()
+		t.PercentageDone = t.CalculateCompletedPercentage()
 	}
 
 	output, err := json.MarshalIndent(&torrents, "", "  ")
