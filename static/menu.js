@@ -37,8 +37,10 @@ var Menu = React.createClass({
                     <a href="#" className="brand-logo">Rtorrent-Web</a>
                     <ul id="nav-mobile" className="right hide-on-med-and-down">
                         <li>
-                            <div className="search">
-                                <input id="search" onChange={this.filterTorrents} name="search" placeholder="search" type="text" />
+                            <div className="input-field">
+                                <input id="search" type="search" required onChange={this.filterTorrents} name="search" placeholder="search" />
+                                <label htmlFor="search"><i className="mdi-action-search"></i></label>
+                                <i className="mdi-navigation-close"></i>
                             </div>
                         </li>
                         <li className={this.getClassName('uploading')}>
