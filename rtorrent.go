@@ -20,6 +20,7 @@ import (
 
 var client *xmlrpc.Client
 var trackers = map[string]string{}
+var torrentStore = map[string]Torrent{}
 
 // Global channel to send notifications to, they will be sent out as SSE
 var notifier chan []byte
@@ -96,10 +97,6 @@ func (t *Torrent) getTracker() string {
 	host = components[len(components)-2]
 
 	return host
-	// Store an inmemory list of torrents, update that, and let the getTorrents
-	// update fields that have changed
-	// or for first version just store a map[hash] => tracker
-	// Take a look at this concurrency model: https://golang.org/doc/codewalk/sharemem/
 }
 
 func (t *Torrent) setTracker() {
@@ -167,6 +164,8 @@ func copyTorrent(hash string) {
 	startTime := time.Now()
 	destinationFolder := os.Getenv("DESTINATIONFOLDER")
 
+	name := torrentStore[hash].Name
+
 	for _, file := range files {
 		source := file.FrozenPath
 		target := fmt.Sprintf("%s/%s", destinationFolder, file.Name)
@@ -175,7 +174,7 @@ func copyTorrent(hash string) {
 	}
 
 	elapsed := time.Since(startTime)
-	eventString := fmt.Sprintf("Torrent moved, elapsed time: %s", elapsed)
+	eventString := fmt.Sprintf("%s moved, elapsed time: %s", name, elapsed)
 	notifier <- []byte(eventString)
 }
 
@@ -215,8 +214,6 @@ func init() {
 }
 
 func getTorrents() []Torrent {
-	defer util.TrackTime(time.Now(), "getTorrents")
-
 	var output [][]interface{}
 	if err := client.Call("d.multicall", []interface{}{"main", "d.name=", "d.bytes_done=", "d.connection_current=", "d.creation_date=", "d.get_down_rate=", "d.get_down_total=", "d.size_bytes=", "d.size_files=", "d.state=", "d.load_date=", "d.ratio=", "d.get_up_rate=", "d.get_up_total=", "d.hash=", "d.peers_connected="}, &output); err != nil {
 		fmt.Println("d.multicall call error: ", err)
@@ -247,6 +244,7 @@ func getTorrents() []Torrent {
 			Hash:              data[13].(string),
 			PeersConnected:    data[14].(int64),
 		}
+		torrentStore[torrent.Hash] = torrent
 		torrents[i] = torrent
 	}
 
